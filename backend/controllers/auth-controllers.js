@@ -2,7 +2,7 @@ import { User } from "../model/user.js";
 import bcrypt from "bcryptjs";
 import { generateVerificationToken } from "../utils/generateVeriificationToken.js";
 import { generateJWTToken } from "../utils/generateJWTToken.js";
-import { generateSignUpMail } from "../emails/email.js";
+import { generateSignUpMail, sendWelcomeEmail } from "../emails/email.js";
 
 // signup
 export const signUp = async (req, res) => {
@@ -37,7 +37,7 @@ export const signUp = async (req, res) => {
     generateJWTToken(res, user._id);
 
     // send user verifactiontoken
-    await generateSignUpMail(user.email, user.verificationToken);
+    generateSignUpMail(user.email, user.verificationToken);
     return res.status(201).json({
       status: "success",
       message:
@@ -51,9 +51,42 @@ export const signUp = async (req, res) => {
 // login
 export const login = (req, res) => {
   res.status(200).json({
-    status: "succes",
+    status: "success",
     message: "HELLLO",
   });
+};
+
+// verify email
+export const verify = async (req, res) => {
+  const { code } = req.body;
+  try {
+    const user = await User.findOne({
+      verificationToken: code,
+      verificationTokenExpiresAt: { $gt: Date.now() },
+    });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired verification code",
+      });
+    }
+    (user.isVerified = true),
+      (user.verificationToken = undefined),
+      (user.verificationTokenExpiresAt = undefined);
+    await user.save();
+
+    sendWelcomeEmail(user.email, user.name);
+    return res.status(200).json({
+      status: "success",
+      message: "Email verified successfully",
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      status: false,
+      message: err,
+    });
+  }
 };
 
 //   forgot password
