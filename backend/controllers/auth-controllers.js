@@ -2,6 +2,7 @@ import { User } from "../model/user.js";
 import bcrypt from "bcryptjs";
 import { generateVerificationToken } from "../utils/generateVeriificationToken.js";
 import { generateJWTToken } from "../utils/generateJWTToken.js";
+import { generateSignUpMail } from "../emails/email.js";
 
 // signup
 export const signUp = async (req, res) => {
@@ -32,21 +33,18 @@ export const signUp = async (req, res) => {
 
     await user.save();
 
+    // generate auth token
     generateJWTToken(res, user._id);
 
+    // send user verifactiontoken
+    await generateSignUpMail(user.email, user.verificationToken);
     return res.status(201).json({
       status: "success",
-      message: "User Created Successfully",
-      user: {
-        ...user._doc,
-        password: undefined,
-      },
+      message:
+        "User Created Successfully, A verification code has been sent to ur mail",
     });
   } catch (error) {
-    return res.status(400).json({
-      status: "failed",
-      message: error.message,
-    });
+    console.log(error);
   }
 };
 
