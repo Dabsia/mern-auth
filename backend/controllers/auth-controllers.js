@@ -1,20 +1,21 @@
 import { User } from "../model/user.js";
 import bcrypt from "bcryptjs";
 import { generateVerificationToken } from "../utils/generateVeriificationToken.js";
+import { generateJWTToken } from "../utils/generateJWTToken.js";
 
 // signup
 export const signUp = async (req, res) => {
   const { name, email, password } = req.body;
   try {
     if (!name || !email || !password) {
-      res.status(400).json({
+      return res.status(400).json({
         status: "false",
         message: "All fields are required",
       });
     }
-    const userAlreadyExists = User.findOne({ email });
+    const userAlreadyExists = await User.findOne({ email });
     if (userAlreadyExists) {
-      res.status(400).json({
+      return res.status(400).json({
         status: "false",
         message: "User already exists",
       });
@@ -26,12 +27,27 @@ export const signUp = async (req, res) => {
       email,
       password: hashedPassword,
       verificationToken,
+      verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
     });
-  } catch (error) {}
-  res.status(200).json({
-    status: "succes",
-    message: "HELLLO",
-  });
+
+    await user.save();
+
+    generateJWTToken(res, user._id);
+
+    return res.status(201).json({
+      status: "success",
+      message: "User Created Successfully",
+      user: {
+        ...user._doc,
+        password: undefined,
+      },
+    });
+  } catch (error) {
+    return res.status(400).json({
+      status: "failed",
+      message: error.message,
+    });
+  }
 };
 
 // login

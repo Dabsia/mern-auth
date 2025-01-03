@@ -14,7 +14,7 @@ router.post("/signup", signUp);
 router.post("/login", login);
 
 // forgot password
-router.post("/signup", forgotPassword);
+router.post("/forgot/password", forgotPassword);
 
 // logout
 router.post("/logout", logout);
