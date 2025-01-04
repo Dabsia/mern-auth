@@ -107,3 +107,56 @@ export const sendWelcomeEmail = (email, name) => {
       console.log(err);
     });
 };
+
+// send resetpassword email
+export const sendResetPasswordEmail = (email, resetUrl) => {
+  let config = {
+    service: "gmail",
+    auth: {
+      user: process.env.NODEMAILER_EMAIL,
+      pass: process.env.NODEMAILER_PASSWORD,
+    },
+  };
+
+  let transporter = nodemailer.createTransport(config);
+
+  let mailGenerator = new Mailgen({
+    theme: "default",
+    product: {
+      name: "Mailgen",
+      link: "https://mailgen.js",
+    },
+  });
+  let response = {
+    body: {
+      name: `hello`,
+      intro: "",
+      action: {
+        button: {
+          color: "#22BC66", // Optional action button color
+          text: "Click here to reset your password",
+          link: `${resetUrl}`,
+        },
+      },
+      outro: "",
+    },
+  };
+
+  let mail = mailGenerator.generate(response);
+
+  let message = {
+    from: process.env.NODEMAILER_EMAIL,
+    to: email,
+    subject: "New User",
+    html: mail,
+  };
+
+  transporter
+    .sendMail(message)
+    .then(() => {
+      console.log("worked");
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+};

@@ -2,7 +2,11 @@ import { User } from "../model/user.js";
 import bcrypt from "bcryptjs";
 import { generateVerificationToken } from "../utils/generateVeriificationToken.js";
 import { generateJWTToken } from "../utils/generateJWTToken.js";
-import { generateSignUpMail, sendWelcomeEmail } from "../emails/email.js";
+import {
+  generateSignUpMail,
+  sendWelcomeEmail,
+  sendResetPasswordEmail,
+} from "../emails/email.js";
 import crypto from "crypto";
 
 // signup
@@ -119,7 +123,6 @@ export const verify = async (req, res) => {
       message: "Email verified successfully",
     });
   } catch (err) {
-    console.log(err);
     return res.status(500).json({
       status: false,
       message: err,
@@ -145,11 +148,21 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordTokenExpiresAt = resetPasswordTokenExpiresAt;
 
     await user.save();
-  } catch (error) {}
-  // res.status(200).json({
-  //   status: "succes",
-  //   message: "HELLLO",
-  // });
+
+    sendResetPasswordEmail(
+      user.email,
+      `${process.env.CLIENT_URL}/reset-password/${resetPasswordToken}`
+    );
+    return res.status(200).json({
+      status: true,
+      message: "Reset Email sent to you successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: err,
+    });
+  }
 };
 
 //   logout
