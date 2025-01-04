@@ -6,6 +6,7 @@ import {
   generateSignUpMail,
   sendWelcomeEmail,
   sendResetPasswordEmail,
+  resetPasswordSuccess,
 } from "../emails/email.js";
 import crypto from "crypto";
 
@@ -172,4 +173,39 @@ export const logout = async (req, res) => {
     status: true,
     message: "Logged Out successfully",
   });
+};
+
+// reset password
+export const resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordTokenExpiresAt: { $gt: Date.now() },
+    });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset token",
+      });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    (user.resetPasswordToken = undefined),
+      (user.resetPasswordTokenExpiresAt = undefined);
+    await user.save();
+
+    resetPasswordSuccess(user.email);
+    return res.status(200).json({
+      status: true,
+      message: "Password has been reset successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: false,
+      message: error,
+    });
+  }
 };

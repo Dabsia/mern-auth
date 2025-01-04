@@ -9,10 +9,14 @@ export const emailSetup = () => {
       pass: process.env.NODEMAILER_PASSWORD,
     },
   };
+  return config;
+};
+export const transporter = () => {
+  return nodemailer.createTransport(config);
+};
 
-  let transporter = nodemailer.createTransport(config);
-
-  let mailGenerator = new Mailgen({
+export const mailGenerator = () => {
+  new Mailgen({
     theme: "default",
     product: {
       name: "Mailgen",
